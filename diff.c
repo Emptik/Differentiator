@@ -7,15 +7,15 @@
 #define _ZERO_ CreateNode(NUMBER, NULL, NULL)
 #define _ONE_ CreateNode(VAR, NULL, NULL)
 #define _TREE_(A, B, C, T) tree = calloc(1, sizeof(struct Node));\
-						tree->val = calloc(4, sizeof(char));\
-						tree->val[0] = A;\
-						tree->val[1] = B;\
-						tree->val[2] = C;\
-						tree->val[3] = '\0';\
-						tree->type = T;\
-						tree->left = lf;\
-						tree->right = rg;\
-						return tree;\
+tree->val = calloc(4, sizeof(char));\
+tree->val[0] = A;\
+tree->val[1] = B;\
+tree->val[2] = C;\
+tree->val[3] = '\0';\
+tree->type = T;\
+tree->left = lf;\
+tree->right = rg;\
+return tree;\
 
 enum Token {
 	NUMBER,
@@ -29,7 +29,8 @@ enum Token {
 	SIN,
 	COS,
 	SH,
-	CH
+	CH,
+	ATG
 };
 
 struct Node
@@ -113,6 +114,7 @@ int type_determinant(char * array) {
 	else if(array[1] == '/') type = DIVIDE;
 	else if(array[1] == '^') type = POW;
 	else if(array[1] == 'l') type = LOG;
+	else if(array[1] == 'a') type = ATG;
 	else if (array[1] == 's') {
 		if(array[2] == 'i') type = SIN;
 		else if(array[2] == 'h') type = SH;
@@ -352,7 +354,20 @@ struct Node * Diff(const struct Node * root)
 		}
 		case SH:
 		{
-			return ;
+			struct Node * compl = _ZERO_;
+			compl->val[0] = '\0';
+			return CreateNode(MULT, CreateNode(CH, compl, Copy(root->right)), Diff(root->right));
+		}
+		case CH:
+		{
+			struct Node * compl = _ZERO_;
+			compl->val[0] = '\0';
+			return CreateNode(MULT, CreateNode(SH, compl, Copy(root->right)), Diff(root->right));
+		}
+		case ATG:
+		{
+			struct Node * division = CreateNode(DIVIDE, _ONE_, CreateNode(PLUS, _ONE_, CreateNode(MULT, Copy(root->right), Copy(root->right))));
+			return CreateNode(MULT, division, Diff(root->right));
 		}
 		default: printf("Wrong type");
 	}
@@ -384,6 +399,10 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 			_TREE_('c', 'o', 's', COS)
 		case SIN:
 			_TREE_('s', 'i', 'n', SIN)
+		case CH:
+			_TREE_('c', 'h', '\0', CH)
+		case SH:
+			_TREE_('s', 'h', '\0', CH)
 		default: printf("Wrong Type");
 	}
 	return NULL;
