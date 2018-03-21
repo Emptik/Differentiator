@@ -6,6 +6,16 @@
 
 #define _ZERO_ CreateNode(NUMBER, NULL, NULL)
 #define _ONE_ CreateNode(VAR, NULL, NULL)
+#define _TREE_(A, B, C, T) tree = calloc(1, sizeof(struct Node));\
+						tree->val = calloc(4, sizeof(char));\
+						tree->val[0] = A;\
+						tree->val[1] = B;\
+						tree->val[2] = C;\
+						tree->val[3] = '\0';\
+						tree->type = T;\
+						tree->left = lf;\
+						tree->right = rg;\
+						return tree;\
 
 enum Token {
 	NUMBER,
@@ -17,7 +27,9 @@ enum Token {
 	POW,
 	LOG,
 	SIN,
-	COS
+	COS,
+	SH,
+	CH
 };
 
 struct Node
@@ -44,6 +56,7 @@ struct Node * Copy(const struct Node * root);
 
 void tree_destroy(struct Node * root);
 void tree_destroy_diff(struct Node * root);
+
 void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count);
 void digraph(FILE * stream, int * label);
 
@@ -86,6 +99,8 @@ int main()
 	fclose(f_in);
 	fclose(f_out_1);
 	fclose(f_out_2);
+	system("dot -Tpng Tree1.dot -o Tree1.png");
+	system("dot -Tpng Tree2.dot -o Tree2.png");
 	return 0;
 }
 
@@ -98,7 +113,14 @@ int type_determinant(char * array) {
 	else if(array[1] == '/') type = DIVIDE;
 	else if(array[1] == '^') type = POW;
 	else if(array[1] == 'l') type = LOG;
-	else if (array[1] == 's') type = SIN;
+	else if (array[1] == 's') {
+		if(array[2] == 'i') type = SIN;
+		else if(array[2] == 'h') type = SH;
+	}
+	else if (array[1] == 'c') {
+		if(array[2] == 'o') type = COS;
+		else if(array[2] == 'h') type = CH;
+	}
 	else type = NUMBER;
 	return type;
 }
@@ -295,26 +317,42 @@ struct Node * Diff(const struct Node * root)
 		case POW:
 		{
 			struct Node * u = Copy(root->left); 
-			struct Node * n = Copy(root->right);			//u^n
-			struct Node * one = _ONE_ ;
-			struct Node * multi_1 = CreateNode(POW, u, CreateNode(MINUS, n, one));
-			struct Node * multi_2 = CreateNode(MULT, Copy(root->right), multi_1);
-			return CreateNode(MULT, multi_2, Diff(root->left));
+			struct Node * v = Copy(root->right);			//u^v
+			struct Node * exp = _ZERO_ ;
+			exp->val[0] = 'e';
+			struct Node * first_factor = CreateNode(POW, u, CreateNode(MINUS, v, _ONE_));
+			struct Node * second_factor_2 = CreateNode(MULT, Copy(root->left), CreateNode(MULT, CreateNode(LOG, exp, Copy(root->left)), Diff(root->right)));
+			struct Node * second_factor_1 = CreateNode(MULT, Copy(root->right), Diff(root->left));
+			return CreateNode(MULT, first_factor, CreateNode(PLUS, second_factor_1, second_factor_2));
 		}
 		case LOG:
 		{
-			struct Node * u = Copy(root->left);
-			struct Node * fd = Copy(root->right);			//log[u, fd]
+			struct Node * fd = Copy(root->left);
+			struct Node * u = Copy(root->right);			//log[fd, u];
 			struct Node * exp = _ZERO_ ;
 			exp->val[0] = 'e';
-			struct Node * den = CreateNode(MULT, u, CreateNode(LOG, fd, exp));
-			return CreateNode(DIVIDE, Diff(root->left), den);
+			struct Node * den = CreateNode(MULT, CreateNode(LOG, exp, fd), u);
+			return CreateNode(DIVIDE, Diff(root->right), den);
 		}
 		case SIN:
 		{
-			struct Node * a = Copy(root->left);		//sin(a)
-			struct Node * cos = CreateNode(SIN, a, _ZERO_);
-			return CreateNode(MULT, cos, Diff(root->left));
+			struct Node * a = Copy(root->right);		//sin(a)
+			struct Node * compl = _ZERO_;
+			compl->val[0] = '\0';
+			struct Node * cos = CreateNode(COS, compl, a);
+			return CreateNode(MULT, cos, Diff(root->right));
+		}
+		case COS:
+		{
+			struct Node * compl = _ZERO_;
+			compl->val[0] = '\0';
+			struct Node * first_factor = CreateNode(MINUS, _ZERO_, CreateNode(SIN, compl, Copy(root->right)));
+			struct Node * second_factor = Diff(root->right);
+			return CreateNode(MULT, first_factor, second_factor);
+		}
+		case SH:
+		{
+			return ;
 		}
 		default: printf("Wrong type");
 	}
@@ -327,86 +365,26 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 	{
 		struct Node * tree = NULL;
 		case NUMBER:
-			tree = calloc(1,sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '0';
-			tree->val[1] = '\0';
-			tree->type = NUMBER;
-			return tree;
+			_TREE_('0', '\0', '\0', NUMBER)
 		case VAR:
-			tree = calloc(1,sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '1';
-			tree->val[1] = '\0';
-			tree->type = VAR;
-			return tree;
+			_TREE_('1', '\0', '\0', VAR)
 		case PLUS:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '+';
-			tree->val[1] = '\0';
-			tree->type = PLUS;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('+', '\0', '\0', PLUS)
 		case MINUS:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '-';
-			tree->val[1] = '\0';
-			tree->type = MINUS;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('-', '\0', '\0', MINUS)
 		case MULT:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '*';
-			tree->val[1] = '\0';
-			tree->type = MULT;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('*', '\0', '\0', MULT)
 		case DIVIDE:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '/';
-			tree->val[1] = '\0';
-			tree->type = DIVIDE;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('/', '\0', '\0', DIVIDE)
 		case POW:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(2, sizeof(char));
-			tree->val[0] = '^';
-			tree->val[1] = '\0';
-			tree->type = POW;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('^', '\0', '\0', POW)
 		case LOG:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(4, sizeof(char));
-			tree->val[0] = 'l';
-			tree->val[1] = 'o';
-			tree->val[2] = 'g';
-			tree->val[3] = '\0';
-			tree->type = LOG;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('l', 'o', 'g', LOG)
+		case COS:
+			_TREE_('c', 'o', 's', COS)
 		case SIN:
-			tree = calloc(1, sizeof(struct Node));
-			tree->val = calloc(4, sizeof(char));
-			tree->val[0] = 'c';
-			tree->val[1] = 'o';
-			tree->val[2] = 's';
-			tree->val[3] = '\0';
-			tree->type = COS;
-			tree->left = lf;
-			tree->right = rg;
-			return tree;
+			_TREE_('s', 'i', 'n', SIN)
+		default: printf("Wrong Type");
 	}
 	return NULL;
 }
