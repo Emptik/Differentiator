@@ -8,11 +8,11 @@
 #define _ONE_ CreateNode(VAR, NULL, NULL)
 #define _TREE_(A, B, C, T) tree = calloc(1, sizeof(struct Node));\
 tree->val = calloc(4, sizeof(char));\
-tree->val[0] = A;\
-tree->val[1] = B;\
-tree->val[2] = C;\
+tree->val[0] = (A);\
+tree->val[1] = (B);\
+tree->val[2] = (C);\
 tree->val[3] = '\0';\
-tree->type = T;\
+tree->type = (T);\
 tree->left = lf;\
 tree->right = rg;\
 return tree;\
@@ -283,11 +283,11 @@ void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count)
 		fprintf(stream, "n%03d ", lab);
 		fprintf(stream, "[label=\"%s\"] ;\n", root->val);
 		assert(lab < 990 && (*lab_count) < 990);
-		if(root->left || root->right) fprintf(stream, "n%03d -> n%03d;\n", lab, (lab + 1));
+		if(root->left) fprintf(stream, "n%03d -> n%03d;\n", lab, (lab + 1));
 		(*lab_count)++;
 		tree_png(root->left, stream, (lab + 1), lab_count);
 		assert(lab < 990 && (*lab_count) < 990);
-		if(root->left || root->right) fprintf(stream, "n%03d -> n%03d;\n", lab, (*lab_count));
+		if(root->right) fprintf(stream, "n%03d -> n%03d;\n", lab, (*lab_count));
 		tree_png(root->right, stream, *lab_count, lab_count);
 	}
 }
@@ -339,30 +339,22 @@ struct Node * Diff(const struct Node * root)
 		case SIN:
 		{
 			struct Node * a = Copy(root->right);		//sin(a)
-			struct Node * compl = _ZERO_;
-			compl->val[0] = '\0';
-			struct Node * cos = CreateNode(COS, compl, a);
+			struct Node * cos = CreateNode(COS, NULL, a);
 			return CreateNode(MULT, cos, Diff(root->right));
 		}
 		case COS:
 		{
-			struct Node * compl = _ZERO_;
-			compl->val[0] = '\0';
-			struct Node * first_factor = CreateNode(MINUS, _ZERO_, CreateNode(SIN, compl, Copy(root->right)));
+			struct Node * first_factor = CreateNode(MINUS, _ZERO_, CreateNode(SIN, NULL, Copy(root->right)));
 			struct Node * second_factor = Diff(root->right);
 			return CreateNode(MULT, first_factor, second_factor);
 		}
 		case SH:
 		{
-			struct Node * compl = _ZERO_;
-			compl->val[0] = '\0';
-			return CreateNode(MULT, CreateNode(CH, compl, Copy(root->right)), Diff(root->right));
+			return CreateNode(MULT, CreateNode(CH, NULL, Copy(root->right)), Diff(root->right));
 		}
 		case CH:
 		{
-			struct Node * compl = _ZERO_;
-			compl->val[0] = '\0';
-			return CreateNode(MULT, CreateNode(SH, compl, Copy(root->right)), Diff(root->right));
+			return CreateNode(MULT, CreateNode(SH, NULL, Copy(root->right)), Diff(root->right));
 		}
 		case ATG:
 		{
@@ -402,7 +394,7 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 		case CH:
 			_TREE_('c', 'h', '\0', CH)
 		case SH:
-			_TREE_('s', 'h', '\0', CH)
+			_TREE_('s', 'h', '\0', SH)
 		default: printf("Wrong Type");
 	}
 	return NULL;
