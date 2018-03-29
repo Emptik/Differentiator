@@ -28,6 +28,7 @@ return tree;
 		tree->val = calloc(2, sizeof(char));\
 		tree->val[0] = '0';\
 		tree->val[1] = '\0';\
+		tree->type = NUMBER;\
 		(*opt_register)++;\
 		return tree;\
 	}\
@@ -514,11 +515,14 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					(*opt_register)++;
 					root->right = tree_destroy_optimize(root->right);
-					if(root->left) root->left = tree_destroy_optimize(root->left);
+					if(root->left) 
+					root->left = tree_destroy_optimize(root->left);
 					struct Node * tree = calloc(1, sizeof(struct Node));
 					tree->val = calloc(2, sizeof(char));
 					tree->val[0] = '0';
 					tree->val[1] = '\0';
+					tree->type = NUMBER;
+					root = tree_destroy_optimize(root);
 					return tree;
 				}
 				else if(root->right->val[0] == '1')
@@ -540,6 +544,8 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 					tree->val = calloc(2, sizeof(char));
 					tree->val[0] = '0';
 					tree->val[1] = '\0';
+					tree->type = NUMBER;
+					root = tree_destroy_optimize(root);
 					return tree;
 				}
 				if(root->left->val[0] == '1')
