@@ -16,9 +16,14 @@ tree->type = (T);\
 tree->left = lf;\
 tree->right = rg;\
 return tree;
+#define _STANDART_OPTIMIZATION_ {\
+			root->right = Optimize_One_Zero(root->right, opt_register);\
+			root->left = Optimize_One_Zero(root->left, opt_register);\
+			return root;\
+		}
 #define _TRIGONOMETRIC_OPTIMIZATION_ root->right = Optimize_One_Zero(root->right, opt_register);\
 		return root;
-#define _OPTIMIZE_ZERO_NEGATIVE_POSITIVE(A) case (A):\
+#define _OPTIMIZE_ZERO_POSITIVE(A) case (A):\
 {\
 	if(!root->right && !root->left)\
 	{\
@@ -485,25 +490,29 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 		case COS: _TRIGONOMETRIC_OPTIMIZATION_
 		case SH: _TRIGONOMETRIC_OPTIMIZATION_
 		case CH: _TRIGONOMETRIC_OPTIMIZATION_
-		case POW: 
+		case POW: _STANDART_OPTIMIZATION_
+		case LOG: _STANDART_OPTIMIZATION_
+		case DIVIDE: _STANDART_OPTIMIZATION_
+		case ATG: _STANDART_OPTIMIZATION_
+		_OPTIMIZE_ZERO_POSITIVE(PLUS);
+		case MINUS:
 		{
-			root->right = Optimize_One_Zero(root->right, opt_register);
 			root->left = Optimize_One_Zero(root->left, opt_register);
-			return root;
+			if(root->right)
+			{
+				assert(root->right->val);
+				if(root->right->val[0] == '0')
+				{
+					(*opt_register)++;
+					root->right = tree_destroy_optimize(root->right);\
+				}
+				else 
+				{
+					root->right = Optimize_One_Zero(root->right, opt_register);\
+				}
+			}
+		return root;
 		}
-		case LOG:
-		{
-			root->right = Optimize_One_Zero(root->right, opt_register);
-			return root;
-		}
-		case DIVIDE:
-		{
-			root->right = Optimize_One_Zero(root->right, opt_register);
-			root->left = Optimize_One_Zero(root->left, opt_register);
-			return root;
-		}
-		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(PLUS);
-		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(MINUS);
 		case MULT:
 		{
 			assert(root);
@@ -515,8 +524,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					(*opt_register)++;
 					root->right = tree_destroy_optimize(root->right);
-					if(root->left) 
-					root->left = tree_destroy_optimize(root->left);
+					if(root->left) root->left = tree_destroy_optimize(root->left);
 					struct Node * tree = calloc(1, sizeof(struct Node));
 					tree->val = calloc(2, sizeof(char));
 					tree->val[0] = '0';
