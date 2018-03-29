@@ -22,9 +22,14 @@ return tree;
 {\
 	if(!root->right && !root->left)\
 	{\
-		tree_destroy_optimize(root);\
+		assert(root->val);\
+		root = tree_destroy_optimize(root);\
+		struct Node * tree = calloc(1, sizeof(struct Node));\
+		tree->val = calloc(2, sizeof(char));\
+		tree->val[0] = '0';\
+		tree->val[1] = '\0';\
 		(*opt_register)++;\
-		return NULL;\
+		return tree;\
 	}\
 	assert(root->right || root->left);\
 	if(root->right)\
@@ -32,7 +37,7 @@ return tree;
 		assert(root->right->val);\
 		if(root->right->val[0] == '0')\
 		{\
-		(*opt_register)++;\
+			(*opt_register)++;\
 			root->right = tree_destroy_optimize(root->right);\
 		}\
 		else \
@@ -54,22 +59,6 @@ return tree;
 		}\
 	}\
 	return root;\
-}
-#define _MULT_OPTIMIZATION_(A) if((A))\
-{\
-	assert((A)->val);\
-	if((A)->val[0] == '0')\
-	{\
-	(*opt_register)++;\
-	root = tree_destroy_optimize(root);\
-	return NULL;\
-	}\
-	else if((A)->val[0] == '1')\
-	{\
-	(*opt_register)++;\
-	(A) = tree_destroy_optimize((A));\
-	}\
-	else (A) = Optimize_One_Zero((A), opt_register);\
 }
 
 enum Token {
@@ -495,13 +484,72 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 		case COS: _TRIGONOMETRIC_OPTIMIZATION_
 		case SH: _TRIGONOMETRIC_OPTIMIZATION_
 		case CH: _TRIGONOMETRIC_OPTIMIZATION_
+		case POW: 
+		{
+			root->right = Optimize_One_Zero(root->right, opt_register);
+			root->left = Optimize_One_Zero(root->left, opt_register);
+			return root;
+		}
+		case LOG:
+		{
+			root->right = Optimize_One_Zero(root->right, opt_register);
+			return root;
+		}
+		case DIVIDE:
+		{
+			root->right = Optimize_One_Zero(root->right, opt_register);
+			root->left = Optimize_One_Zero(root->left, opt_register);
+			return root;
+		}
 		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(PLUS);
 		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(MINUS);
 		case MULT:
 		{
+			assert(root);
 			assert(root->right || root->left);
-			_MULT_OPTIMIZATION_(root->right)
-			_MULT_OPTIMIZATION_(root->left)
+			if(root->right)
+			{
+				assert(root->right->val);
+				if(root->right->val[0] == '0')
+				{
+					(*opt_register)++;
+					root->right = tree_destroy_optimize(root->right);
+					if(root->left) root->left = tree_destroy_optimize(root->left);
+					struct Node * tree = calloc(1, sizeof(struct Node));
+					tree->val = calloc(2, sizeof(char));
+					tree->val[0] = '0';
+					tree->val[1] = '\0';
+					return tree;
+				}
+				else if(root->right->val[0] == '1')
+				{
+					(*opt_register)++;
+					root->right = tree_destroy_optimize(root->right);
+				}
+				else root->right = Optimize_One_Zero(root->right, opt_register);
+			}
+			if(root->left)
+			{
+				assert(root->left->val);
+				if(root->left->val[0] == '0')
+				{
+					(*opt_register)++;
+					root->left = tree_destroy_optimize(root->left);
+					if(root->right) root->right = tree_destroy_optimize(root->right);
+					struct Node * tree = calloc(1, sizeof(struct Node));
+					tree->val = calloc(2, sizeof(char));
+					tree->val[0] = '0';
+					tree->val[1] = '\0';
+					return tree;
+				}
+				if(root->left->val[0] == '1')
+				{
+					(*opt_register)++;
+					root->left = tree_destroy_optimize(root->left);
+				}
+				else
+					root->left = Optimize_One_Zero(root->left, opt_register);
+			}
 			return root;
 		}
 		default: printf("Wrong Type! Type is %d\n", root->type);
