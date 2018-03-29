@@ -15,7 +15,62 @@ tree->val[3] = '\0';\
 tree->type = (T);\
 tree->left = lf;\
 tree->right = rg;\
-return tree;\
+return tree;
+#define _TRIGONOMETRIC_OPTIMIZATION_ root->right = Optimize_One_Zero(root->right, opt_register);\
+		return root;
+#define _OPTIMIZE_ZERO_NEGATIVE_POSITIVE(A) case (A):\
+{\
+	if(!root->right && !root->left)\
+	{\
+		tree_destroy_optimize(root);\
+		(*opt_register)++;\
+		return NULL;\
+	}\
+	assert(root->right || root->left);\
+	if(root->right)\
+	{\
+		assert(root->right->val);\
+		if(root->right->val[0] == '0')\
+		{\
+		(*opt_register)++;\
+			root->right = tree_destroy_optimize(root->right);\
+		}\
+		else \
+		{\
+			root->right = Optimize_One_Zero(root->right, opt_register);\
+		}\
+	}\
+	if(root->left)\
+	{\
+		assert(root->left->val);\
+		if(root->left->val[0] == '0')\
+		{\
+			(*opt_register)++;\
+			root->left = tree_destroy_optimize(root->left);\
+		}\
+		else \
+		{\
+			root->left = Optimize_One_Zero(root->left, opt_register);\
+		}\
+	}\
+	return root;\
+}
+#define _MULT_OPTIMIZATION_(A) if((A))\
+{\
+	assert((A)->val);\
+	if((A)->val[0] == '0')\
+	{\
+	(*opt_register)++;\
+	root = tree_destroy_optimize(root);\
+	return NULL;\
+	}\
+	else if((A)->val[0] == '1')\
+	{\
+	(*opt_register)++;\
+	(A) = tree_destroy_optimize((A));\
+	}\
+	else (A) = Optimize_One_Zero((A), opt_register);\
+}
 
 enum Token {
 	NUMBER,
@@ -54,9 +109,12 @@ int type_determinant(char * array);
 struct Node * Diff(const struct Node * root);
 struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg);
 struct Node * Copy(const struct Node * root);
+struct Node * Optimize(struct Node * root);
+struct Node * Optimize_One_Zero(struct Node * root, int * opt_register);
 
 void tree_destroy(struct Node * root);
 void tree_destroy_diff(struct Node * root);
+struct Node * tree_destroy_optimize(struct Node * root);
 
 void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count);
 void digraph(FILE * stream, int * label);
@@ -66,6 +124,7 @@ int main()
 	FILE * f_in= NULL;
 	FILE * f_out_1 = NULL;
 	FILE * f_out_2 = NULL;
+	FILE * f_out_3 = NULL;
 	char strings[1000] = {0};
 	char * c = calloc(1, sizeof(char));
 	int * n = calloc(1, sizeof(char));
@@ -77,9 +136,11 @@ int main()
 	f_in = fopen("strings", "r");
 	f_out_1 = fopen("Tree1.dot", "w");
 	f_out_2 = fopen("Tree2.dot", "w");
+	f_out_3 = fopen("Tree3.dot", "w");
 	assert(f_in);
 	assert(f_out_1);
 	assert(f_out_2);
+	assert(f_out_3);
 	arr_fill(strings, f_in, num);
 	arr_slash(strings, num);
 	tree = tree_fill(tree, strings, num);
@@ -91,6 +152,10 @@ int main()
 	digraph(f_out_2, lab_count);
 	tree_png(tree_diff, f_out_2, lab, lab_count);
 	digraph(f_out_2, lab_count);
+	tree_diff = Optimize(tree_diff);
+	digraph(f_out_3, lab_count);
+	tree_png(tree_diff, f_out_3, lab, lab_count);
+	digraph(f_out_3, lab_count);
 	free(c);
 	free(n);
 	free(num);
@@ -100,8 +165,10 @@ int main()
 	fclose(f_in);
 	fclose(f_out_1);
 	fclose(f_out_2);
+	fclose(f_out_3);
 	system("dot -Tpng Tree1.dot -o Tree1.png");
 	system("dot -Tpng Tree2.dot -o Tree2.png");
+	system("dot -Tpng Tree3.dot -o Tree3.png");
 	return 0;
 }
 
@@ -362,6 +429,7 @@ struct Node * Diff(const struct Node * root)
 			return CreateNode(MULT, division, Diff(root->right));
 		}
 		default: printf("Wrong type");
+		assert(0);
 	}
 	return NULL;
 }
@@ -374,7 +442,7 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 		case NUMBER:
 			_TREE_('0', '\0', '\0', NUMBER)
 		case VAR:
-			_TREE_('1', '\0', '\0', VAR)
+			_TREE_('1', '\0', '\0', NUMBER)
 		case PLUS:
 			_TREE_('+', '\0', '\0', PLUS)
 		case MINUS:
@@ -396,8 +464,49 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 		case SH:
 			_TREE_('s', 'h', '\0', SH)
 		default: printf("Wrong Type");
+		assert(0);
 	}
 	return NULL;
+}
+
+struct Node * Optimize(struct Node * root)
+{
+	int * opt_register = calloc(1, sizeof(int));
+	do
+	{
+		(*opt_register) = 0;
+		root = Optimize_One_Zero(root, opt_register);
+	}
+	while((*opt_register));
+	free(opt_register);
+	return root;
+}
+
+struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
+{
+	assert(opt_register);
+	if(!root) return NULL;
+	assert(root->type <= 12);
+	switch(root->type)
+	{
+		case NUMBER: return root;
+		case VAR: return root;
+		case SIN: _TRIGONOMETRIC_OPTIMIZATION_
+		case COS: _TRIGONOMETRIC_OPTIMIZATION_
+		case SH: _TRIGONOMETRIC_OPTIMIZATION_
+		case CH: _TRIGONOMETRIC_OPTIMIZATION_
+		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(PLUS);
+		_OPTIMIZE_ZERO_NEGATIVE_POSITIVE(MINUS);
+		case MULT:
+		{
+			assert(root->right || root->left);
+			_MULT_OPTIMIZATION_(root->right)
+			_MULT_OPTIMIZATION_(root->left)
+			return root;
+		}
+		default: printf("Wrong Type! Type is %d\n", root->type);
+		assert(0);
+	}
 }
 
 struct Node * Copy(const struct Node * root)
@@ -447,4 +556,16 @@ void tree_destroy_diff(struct Node * root)
 		free(root->val);
 		free(root);
 	}
+}
+
+struct Node * tree_destroy_optimize(struct Node * root)
+{
+	if(root)
+	{
+		tree_destroy_diff(root->left);
+		tree_destroy_diff(root->right);
+		free(root->val);
+		free(root);
+	}
+	return NULL;
 }
