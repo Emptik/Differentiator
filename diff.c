@@ -495,24 +495,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 		case DIVIDE: _STANDART_OPTIMIZATION_
 		case ATG: _STANDART_OPTIMIZATION_
 		_OPTIMIZE_ZERO_POSITIVE(PLUS);
-		case MINUS:
-		{
-			root->left = Optimize_One_Zero(root->left, opt_register);
-			if(root->right)
-			{
-				assert(root->right->val);
-				if(root->right->val[0] == '0')
-				{
-					(*opt_register)++;
-					root->right = tree_destroy_optimize(root->right);\
-				}
-				else 
-				{
-					root->right = Optimize_One_Zero(root->right, opt_register);\
-				}
-			}
-		return root;
-		}
+		case MINUS: _STANDART_OPTIMIZATION_
 		case MULT:
 		{
 			assert(root);
