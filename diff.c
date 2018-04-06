@@ -23,49 +23,6 @@ return tree;
 		}
 #define _TRIGONOMETRIC_OPTIMIZATION_ root->right = Optimize_One_Zero(root->right, opt_register);\
 		return root;
-#define _OPTIMIZE_ZERO_POSITIVE(A) case (A):\
-{\
-	if(!root->right && !root->left)\
-	{\
-		assert(root->val);\
-		root = tree_destroy_optimize(root);\
-		struct Node * tree = calloc(1, sizeof(struct Node));\
-		tree->val = calloc(2, sizeof(char));\
-		tree->val[0] = '0';\
-		tree->val[1] = '\0';\
-		tree->type = NUMBER;\
-		(*opt_register)++;\
-		return tree;\
-	}\
-	assert(root->right || root->left);\
-	if(root->right)\
-	{\
-		assert(root->right->val);\
-		if(root->right->val[0] == '0')\
-		{\
-			(*opt_register)++;\
-			root->right = tree_destroy_optimize(root->right);\
-		}\
-		else \
-		{\
-			root->right = Optimize_One_Zero(root->right, opt_register);\
-		}\
-	}\
-	if(root->left)\
-	{\
-		assert(root->left->val);\
-		if(root->left->val[0] == '0')\
-		{\
-			(*opt_register)++;\
-			root->left = tree_destroy_optimize(root->left);\
-		}\
-		else \
-		{\
-			root->left = Optimize_One_Zero(root->left, opt_register);\
-		}\
-	}\
-	return root;\
-}
 #define CONST_OPTMIZE(A) { int left = 0;\
 int right = 0;\
 if(root->left) root->left = Optimize_const(root->left, opt_register);\
@@ -547,29 +504,34 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 		case LOG: _STANDART_OPTIMIZATION_
 		case DIVIDE: _STANDART_OPTIMIZATION_
 		case ATG: _STANDART_OPTIMIZATION_
-		_OPTIMIZE_ZERO_POSITIVE(PLUS);
 		case MINUS: _STANDART_OPTIMIZATION_
-		case MULT:
+		case PLUS:
 		{
-			assert(root);
+			if(!root->right && !root->left)
+			{
+				assert(root->val);
+				root = tree_destroy_optimize(root);
+				struct Node * tree = calloc(1, sizeof(struct Node));
+				tree->val = calloc(2, sizeof(char));
+				tree->val[0] = '0';
+				tree->val[1] = '\0';
+				tree->type = NUMBER;
+				(*opt_register)++;
+				return tree;
+			}
 			assert(root->right || root->left);
 			if(root->right)
 			{
 				assert(root->right->val);
-				if(root->right->val[0] == '0')
+				if(!root->left)
 				{
-					(*opt_register)++;
-					root->right = tree_destroy_optimize(root->right);
-					if(root->left) root->left = tree_destroy_optimize(root->left);
-					struct Node * tree = calloc(1, sizeof(struct Node));
-					tree->val = calloc(2, sizeof(char));
-					tree->val[0] = '0';
-					tree->val[1] = '\0';
-					tree->type = NUMBER;
+					struct Node * u = root->right;
+					root->right = NULL;
 					root = tree_destroy_optimize(root);
-					return tree;
+					(*opt_register)++;
+					return u;
 				}
-				else if(root->right->val[0] == '1')
+				else if (root->right->val[0] == '0')
 				{
 					(*opt_register)++;
 					root->right = tree_destroy_optimize(root->right);
@@ -579,26 +541,96 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 			if(root->left)
 			{
 				assert(root->left->val);
-				if(root->left->val[0] == '0')
+				if(!root->right)
 				{
-					(*opt_register)++;
-					root->left = tree_destroy_optimize(root->left);
-					if(root->right) root->right = tree_destroy_optimize(root->right);
-					struct Node * tree = calloc(1, sizeof(struct Node));
-					tree->val = calloc(2, sizeof(char));
-					tree->val[0] = '0';
-					tree->val[1] = '\0';
-					tree->type = NUMBER;
+					struct Node * u = root->left;
+					root->left = NULL;
 					root = tree_destroy_optimize(root);
-					return tree;
+					(*opt_register)++;
+					return u;
 				}
-				if(root->left->val[0] == '1')
+				else if(root->left->val[0] == '0')
 				{
 					(*opt_register)++;
 					root->left = tree_destroy_optimize(root->left);
+				}
+				else root->left = Optimize_One_Zero(root->left, opt_register);
+			}
+			return root;
+		}
+		case MULT:
+		{
+			assert(root);
+			assert(root->right || root->left);
+			if(root->right)
+			{
+				assert(root->right->val);
+				if(!root->left)
+				{
+					struct Node * u = root->right;
+					root->right = NULL;
+					root = tree_destroy_optimize(root);
+					(*opt_register)++;
+					return u;
 				}
 				else
-					root->left = Optimize_One_Zero(root->left, opt_register);
+				{ 
+					assert(root->right->val);
+					if(root->right->val[0] == '0')
+					{
+						(*opt_register)++;
+						root->right = tree_destroy_optimize(root->right);
+						if(root->left) root->left = tree_destroy_optimize(root->left);
+						struct Node * tree = calloc(1, sizeof(struct Node));
+						tree->val = calloc(2, sizeof(char));
+						tree->val[0] = '0';
+						tree->val[1] = '\0';
+						tree->type = NUMBER;
+						root = tree_destroy_optimize(root);
+						return tree;
+					}
+					else if(root->right->val[0] == '1' && root->right->val[1] == '\0')
+					{
+						(*opt_register)++;
+						root->right = tree_destroy_optimize(root->right);
+					}
+					else root->right = Optimize_One_Zero(root->right, opt_register);
+				}
+			}
+			if(root->left)
+			{
+				assert(root->left->val);
+				if(!root->right)
+				{
+					struct Node * u = root->left;
+					root->left = NULL;
+					root = tree_destroy_optimize(root);
+					(*opt_register)++;
+					return u;
+				}
+				else
+				{
+					if(root->left->val[0] == '0')
+					{
+						(*opt_register)++;
+						root->left = tree_destroy_optimize(root->left);
+						if(root->right) root->right = tree_destroy_optimize(root->right);
+						struct Node * tree = calloc(1, sizeof(struct Node));
+						tree->val = calloc(2, sizeof(char));
+						tree->val[0] = '0';
+						tree->val[1] = '\0';
+						tree->type = NUMBER;
+						root = tree_destroy_optimize(root);
+						return tree;
+					}
+					else if(root->left->val[0] == '1' && root->left->val[1] == '\0')
+					{
+						(*opt_register)++;
+						root->left = tree_destroy_optimize(root->left);
+					}
+					else
+						root->left = Optimize_One_Zero(root->left, opt_register);
+					}
 			}
 			return root;
 		}
