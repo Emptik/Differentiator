@@ -106,6 +106,9 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg);
 struct Node * Copy(const struct Node * root);
 struct Node * Optimize(struct Node * root);
 struct Node * Optimize_One_Zero(struct Node * root, int * opt_register);
+struct Node * Optimize_const(struct Node * root, int * opt_register);
+int Get_Number(const struct Node * root);
+struct Node * Take_Number(int number);
 
 void tree_destroy(struct Node * root);
 void tree_destroy_diff(struct Node * root);
@@ -119,7 +122,7 @@ int main()
 	FILE * f_in= NULL;
 	FILE * f_out_1 = NULL;
 	FILE * f_out_2 = NULL;
-	FILE * f_out_3 = NULL;
+	//FILE * f_out_3 = NULL;
 	char strings[1000] = {0};
 	char * c = calloc(1, sizeof(char));
 	int * n = calloc(1, sizeof(char));
@@ -131,26 +134,27 @@ int main()
 	f_in = fopen("strings", "r");
 	f_out_1 = fopen("Tree1.dot", "w");
 	f_out_2 = fopen("Tree2.dot", "w");
-	f_out_3 = fopen("Tree3.dot", "w");
+	/*f_out_3 = fopen("Tree3.dot", "w");
 	assert(f_in);
 	assert(f_out_1);
 	assert(f_out_2);
-	assert(f_out_3);
+	assert(f_out_3);*/
 	arr_fill(strings, f_in, num);
 	arr_slash(strings, num);
 	tree = tree_fill(tree, strings, num);
 	assert(tree);
-	tree_diff = Diff(tree);
+	//tree_diff = Diff(tree);
 	digraph(f_out_1, lab_count);
 	tree_png(tree, f_out_1, lab, lab_count);
 	digraph(f_out_1, lab_count);
+	tree = Optimize_const(tree, n);
 	digraph(f_out_2, lab_count);
-	tree_png(tree_diff, f_out_2, lab, lab_count);
+	tree_png(tree, f_out_2, lab, lab_count);
 	digraph(f_out_2, lab_count);
-	tree_diff = Optimize(tree_diff);
+	/*tree_diff = Optimize(tree_diff);
 	digraph(f_out_3, lab_count);
 	tree_png(tree_diff, f_out_3, lab, lab_count);
-	digraph(f_out_3, lab_count);
+	digraph(f_out_3, lab_count);*/
 	free(c);
 	free(n);
 	free(num);
@@ -160,10 +164,10 @@ int main()
 	fclose(f_in);
 	fclose(f_out_1);
 	fclose(f_out_2);
-	fclose(f_out_3);
+	//fclose(f_out_3);
 	system("dot -Tpng Tree1.dot -o Tree1.png");
 	system("dot -Tpng Tree2.dot -o Tree2.png");
-	system("dot -Tpng Tree3.dot -o Tree3.png");
+	//system("dot -Tpng Tree3.dot -o Tree3.png");
 	return 0;
 }
 
@@ -471,6 +475,7 @@ struct Node * Optimize(struct Node * root)
 	{
 		(*opt_register) = 0;
 		root = Optimize_One_Zero(root, opt_register);
+		root = Optimize_const(root, opt_register);
 	}
 	while((*opt_register));
 	free(opt_register);
@@ -554,6 +559,113 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 	}
 }
 
+struct Node * Optimize_const(struct Node * root, int * opt_register)
+{
+	assert(root);
+	assert(opt_register);
+	assert(root->type <= 12);
+	switch(root->type)
+	{
+		case NUMBER:
+		{
+			return root;
+		}
+		case VAR:
+		{
+			return root;
+		}
+		case PLUS:
+		{
+			int left = 0;
+			int right = 0;
+			if(root->left) root->left = Optimize_const(root->left, opt_register);
+			if(root->right) root->right = Optimize_const(root->right, opt_register);
+			if(root->left->type == NUMBER && root->right->type == NUMBER)
+			{
+				left = Get_Number(root->left);
+				right = Get_Number(root->right);
+				int sum = left + right;
+				struct Node * tree = Take_Number(sum);
+				//root = tree_destroy_optimize(root);
+				(*opt_register)++;
+				return tree;
+			}
+			else
+				return root;
+		}
+	}
+	assert(0);
+}
+
+int Get_Number(const struct Node * root)
+{
+	assert(root);
+	assert(root->val);
+	int number = 0;
+	int p = 0;
+	int counter = 0;
+	while('0' <= root->val[p] && root->val[p] <= '9')
+	{
+		number = number * 10 + (root->val[p] -'0');
+		p++;
+		counter++;
+	}
+	p = 0;
+	if(root->val[p] == '-')
+	{
+		p++;
+		while('0' <= root->val[p] && root->val[p] <= '9')
+		{
+			number = number * 10 + (root->val[p] -'0');
+			p++;
+			counter++;
+		}
+	}
+	if(counter == 0) 
+	{
+		assert(0);
+	}
+	return number;
+}
+
+struct Node * Take_Number(int number)
+{
+	int value = number;
+	int p = 0;
+	int counter = 0;
+	int p_0 = 0;
+	struct Node * tree = calloc(1, sizeof(struct Node));
+	tree->val = calloc(12, sizeof(char));
+	tree->type = NUMBER;
+	if(number < 0)
+	{
+		tree->val[p] = '-';
+		p++;
+		number = -number;
+	}
+	while(value != 0)
+	{
+		value = value / 10;
+		counter++;
+	}
+	if(counter == 0) 
+	{
+		tree->val[p] = '0';
+		p++;
+	}
+	else
+	{
+		p_0 = counter;
+		for( ; counter >= 1; counter--)
+		{
+			tree->val[p + counter - 1] = (number % 10) + '0';
+			number /= 10;
+		}
+	}
+	tree->val[p+p_0] = '\0';
+	return tree;
+}
+
 struct Node * Copy(const struct Node * root)
 {
 	if(root)
@@ -609,7 +721,7 @@ struct Node * tree_destroy_optimize(struct Node * root)
 	{
 		tree_destroy_diff(root->left);
 		tree_destroy_diff(root->right);
-		free(root->val);
+		//if(root->val) free(root->val);
 		free(root);
 	}
 	return NULL;
