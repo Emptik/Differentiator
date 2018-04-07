@@ -157,6 +157,8 @@ struct Node * tree_destroy_optimize(struct Node * root);
 
 void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count);
 void digraph(FILE * stream, int * label);
+void Tex(FILE * stream, const struct Node * root, int bull);
+void Tex_make(FILE * stream, const struct Node * root);
 
 int main()
 {
@@ -164,6 +166,7 @@ int main()
 	FILE * f_out_1 = NULL;
 	FILE * f_out_2 = NULL;
 	FILE * f_out_3 = NULL;
+	FILE * f_out_tex = NULL;
 	char strings[1000] = {0};
 	char * c = calloc(1, sizeof(char));
 	int * n = calloc(1, sizeof(char));
@@ -176,10 +179,12 @@ int main()
 	f_out_1 = fopen("Tree1.dot", "w");
 	f_out_2 = fopen("Tree2.dot", "w");
 	f_out_3 = fopen("Tree3.dot", "w");
+	f_out_tex = fopen("Texmake.tex", "w");
 	assert(f_in);
 	assert(f_out_1);
 	assert(f_out_2);
 	assert(f_out_3);
+	assert(f_out_tex);
 	arr_fill(strings, f_in, num);
 	arr_slash(strings, num);
 	tree = tree_fill(tree, strings, num);
@@ -198,13 +203,16 @@ int main()
 	free(c);
 	free(n);
 	free(num);
-	tree_destroy_diff(tree_diff);
+	Tex(f_out_tex, tree, 1);
+	Tex(f_out_tex, tree_diff, 0);
 	tree_destroy(tree);
+	tree_destroy_diff(tree_diff);
 	free(lab_count);
 	fclose(f_in);
 	fclose(f_out_1);
 	fclose(f_out_2);
 	fclose(f_out_3);
+	fclose(f_out_tex);
 	system("dot -Tpng Tree1.dot -o Tree1.png");
 	system("dot -Tpng Tree2.dot -o Tree2.png");
 	system("dot -Tpng Tree3.dot -o Tree3.png");
@@ -836,6 +844,66 @@ void digraph(FILE * stream, int * label)
 	else {
 		fprintf(stream,"}\n");
 		(*label) = 0;
+	}
+}
+
+void Tex(FILE * stream, const struct Node * root, int bull)
+{
+	if(bull)
+	{
+		fprintf(stream, "\\documentclass[a4, 12pt]{article}\n");
+		fprintf(stream, "\\usepackage{amsmath,amsfonts,amssymb,amsthm,mathtools}\n");
+		fprintf(stream, "\\begin{document}\nYou wanted the derivative of this expression:\n");
+	}
+	fprintf(stream, "\\[");
+	Tex_make(stream, root);
+	if(bull)
+	{
+		fprintf(stream, "\\]\n I succeeded:\n");
+	}
+	if(!bull)
+	{
+		fprintf(stream, "\\]\n\\end{document}\n");
+	}
+}
+
+void Tex_make(FILE * stream, const struct Node * root)
+{
+	assert(root);
+	switch(root->type)
+	{
+		case NUMBER:
+			fprintf(stream, "%s", root->val);
+			break;
+		case VAR:
+			fprintf(stream, "%s", root->val);
+			break;
+		case PLUS:
+			fprintf(stream, "(");
+			Tex_make(stream, root->left);
+			fprintf(stream, "+");
+			Tex_make(stream, root->right);
+			fprintf(stream, ")");
+			break;
+		case MINUS:
+			fprintf(stream, "(");
+			Tex_make(stream, root->left);
+			fprintf(stream, "-");
+			Tex_make(stream, root->right);
+			fprintf(stream, ")");
+			break;
+		case MULT:
+			Tex_make(stream, root->left);
+			fprintf(stream, "\\cdot");
+			Tex_make(stream, root->right);
+			break;
+		case DIVIDE:
+			fprintf(stream, "\\frac{");
+			Tex_make(stream, root->left);
+			fprintf(stream, "}{");
+			Tex_make(stream, root->right);
+			fprintf(stream, "}");
+			break;
 	}
 }
 
