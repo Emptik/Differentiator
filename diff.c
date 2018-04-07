@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define _ZERO_ CreateNode(NUMBER, NULL, NULL)
 #define _ONE_ CreateNode(VAR, NULL, NULL)
@@ -34,7 +33,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			left = Get_Number(root->left);\
 			right = Get_Number(root->right);\
 			int sum = left A right;\
-			struct Node * tree = Take_Number(sum);\
+			struct Node * tree = Put_Number(sum);\
 			root = tree_destroy_optimize(root);\
 			(*opt_register)++;\
 			return tree;\
@@ -48,7 +47,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 		{\
 			right = Get_Number(root->right);\
 			int sum = left A right;\
-			struct Node * tree = Take_Number(sum);\
+			struct Node * tree = Put_Number(sum);\
 			root = tree_destroy_optimize(root);\
 			(*opt_register)++;\
 			return tree;\
@@ -62,7 +61,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 		{\
 			left = Get_Number(root->left);\
 			int sum = left A right;\
-			struct Node * tree = Take_Number(sum);\
+			struct Node * tree = Put_Number(sum);\
 			root = tree_destroy_optimize(root);\
 			(*opt_register)++;\
 			return tree;\
@@ -71,6 +70,42 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			return root;\
 	}\
 	else assert(0);\
+}
+#define SIN_SH_ATG_OPTIMIZE {\
+			assert(root->right);\
+			assert(root->right->val);\
+			root->right = Optimize_const(root->right, opt_register);\
+			assert(root->right);\
+			assert(root->right->val);\
+			if(root->right->val[0] == '0' && (root->right->val[1] == ' ' || root->right->val[1] == '\0'))\
+			{\
+				struct Node * tree = root->right; \
+				root->right = NULL;\
+				root = tree_destroy_optimize(root);\
+				(*opt_register)++;\
+				return tree;\
+			}\
+			else return root;\
+		}
+#define COS_CH_OPTIMIZE {\
+			assert(root->right);\
+			assert(root->right->val);\
+			root->right = Optimize_const(root->right, opt_register);\
+			assert(root->right);\
+			assert(root->right->val);\
+			if(root->right->val[0] == '0' && (root->right->val[1] == ' ' || root->right->val[1] == '\0'))\
+			{\
+				struct Node * tree = _ONE_;\
+				root = tree_destroy_optimize(root);\
+				(*opt_register)++;\
+				return tree;\
+			}\
+			else return root;\
+		}
+#define _CONST_OPTIMIZE_STANDART_ {\
+			root->right = Optimize_const(root->right, opt_register);\
+			root->left = Optimize_const(root->left, opt_register);\
+			return root;\
 }
 
 enum Token {
@@ -114,7 +149,7 @@ struct Node * Optimize(struct Node * root);
 struct Node * Optimize_One_Zero(struct Node * root, int * opt_register);
 struct Node * Optimize_const(struct Node * root, int * opt_register);
 int Get_Number(const struct Node * root);
-struct Node * Take_Number(int number);
+struct Node * Put_Number(int number);
 
 void tree_destroy(struct Node * root);
 void tree_destroy_diff(struct Node * root);
@@ -475,12 +510,14 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 
 struct Node * Optimize(struct Node * root)
 {
+	int i = 0;
 	int * opt_register = calloc(1, sizeof(int));
 	do
 	{
 		(*opt_register) = 0;
 		root = Optimize_One_Zero(root, opt_register);
 		root = Optimize_const(root, opt_register);
+		i++;
 	}
 	while((*opt_register));
 	free(opt_register);
@@ -503,7 +540,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 		case POW: _STANDART_OPTIMIZATION_
 		case LOG: _STANDART_OPTIMIZATION_
 		case DIVIDE: _STANDART_OPTIMIZATION_
-		case ATG: _STANDART_OPTIMIZATION_
+		case ATG: _TRIGONOMETRIC_OPTIMIZATION_
 		case MINUS: _STANDART_OPTIMIZATION_
 		case PLUS:
 		{
@@ -656,7 +693,75 @@ struct Node * Optimize_const(struct Node * root, int * opt_register)
 		}
 		case PLUS: CONST_OPTMIZE(+)
 		case MINUS: CONST_OPTMIZE(-)
-		case MULT: CONST_OPTMIZE(*)
+		case MULT: 
+		{
+			int left = 0;
+			int right = 0;
+			if(root->left) root->left = Optimize_const(root->left, opt_register);
+			if(root->right) root->right = Optimize_const(root->right, opt_register);
+			if(root->left && root->right)
+			{
+				if(root->left->type == NUMBER && root->right->type == NUMBER)
+				{
+					left = Get_Number(root->left);
+					right = Get_Number(root->right);
+					int sum = left * right;
+					struct Node * tree = Put_Number(sum);
+					root = tree_destroy_optimize(root);
+					(*opt_register)++;
+					return tree;
+				}
+				else return root;
+			}
+			else if (!root->left || !root->right)
+			{
+				if(!root->left && root->right)
+				{
+					if(root->right->type == NUMBER)
+					{
+						right = Get_Number(root->right); 
+						struct Node * tree = Put_Number(right);
+						root = tree_destroy_optimize(root);
+						(*opt_register)++;
+						return tree;
+					}
+					else
+					{
+						struct Node * tree = Copy(root->right);
+						root->right = NULL;
+						(*opt_register)++;
+						return tree;
+					}
+				}
+				else if(!root->right && root->left)
+				{
+					if(root->left->type == NUMBER)
+					{
+						left = Get_Number(root->left); 
+						struct Node * tree = Put_Number(left);
+						root = tree_destroy_optimize(root);
+						(*opt_register)++;
+						return tree;
+					}
+					else
+					{
+						struct Node * tree = Copy(root->left);
+						root->left = NULL;
+						(*opt_register)++;
+						return tree;
+					}
+				}
+				else assert(0);
+			}
+		}
+		case SIN: SIN_SH_ATG_OPTIMIZE
+		case SH: SIN_SH_ATG_OPTIMIZE
+		case ATG: SIN_SH_ATG_OPTIMIZE
+		case COS: COS_CH_OPTIMIZE
+		case CH: COS_CH_OPTIMIZE
+		case DIVIDE: _CONST_OPTIMIZE_STANDART_
+		case POW: _CONST_OPTIMIZE_STANDART_
+		case LOG: _CONST_OPTIMIZE_STANDART_
 	}
 	assert(0);
 }
@@ -668,7 +773,7 @@ int Get_Number(const struct Node * root)
 	return atoi(root->val);
 }
 
-struct Node * Take_Number(int number)
+struct Node * Put_Number(int number)
 {
 	int value = number;
 	int p = 0;
