@@ -216,6 +216,7 @@ int main()
 	system("dot -Tpng Tree1.dot -o Tree1.png");
 	system("dot -Tpng Tree2.dot -o Tree2.png");
 	system("dot -Tpng Tree3.dot -o Tree3.png");
+	system("pdflatex Texmake > Texmake_console");
 	return 0;
 }
 
@@ -475,8 +476,9 @@ struct Node * Diff(const struct Node * root)
 			struct Node * division = CreateNode(DIVIDE, _ONE_, CreateNode(PLUS, _ONE_, CreateNode(MULT, Copy(root->right), Copy(root->right))));
 			return CreateNode(MULT, division, Diff(root->right));
 		}
-		default: printf("Wrong type");
-		assert(0);
+		default: 
+			printf("Wrong type in Diff\n");
+			exit(11);
 	}
 	return NULL;
 }
@@ -510,22 +512,21 @@ struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg)
 			_TREE_('c', 'h', '\0', CH)
 		case SH:
 			_TREE_('s', 'h', '\0', SH)
-		default: printf("Wrong Type");
-		assert(0);
+		default: 
+			printf("Wrong Type in CreateNode\n");
+			exit(12);
 	}
 	return NULL;
 }
 
 struct Node * Optimize(struct Node * root)
 {
-	int i = 0;
 	int * opt_register = calloc(1, sizeof(int));
 	do
 	{
 		(*opt_register) = 0;
 		root = Optimize_One_Zero(root, opt_register);
 		root = Optimize_const(root, opt_register);
-		i++;
 	}
 	while((*opt_register));
 	free(opt_register);
@@ -679,8 +680,9 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 			}
 			return root;
 		}
-		default: printf("Wrong Type! Type is %d\n", root->type);
-		assert(0);
+		default: 
+			printf("Wrong Type in Optimize_One_Zero\n");
+			exit(13);
 	}
 }
 
@@ -770,8 +772,10 @@ struct Node * Optimize_const(struct Node * root, int * opt_register)
 		case DIVIDE: _CONST_OPTIMIZE_STANDART_
 		case POW: _CONST_OPTIMIZE_STANDART_
 		case LOG: _CONST_OPTIMIZE_STANDART_
+		default:
+		printf("Wrong type in Optimize_const\n");
+		exit(14);
 	}
-	assert(0);
 }
 
 int Get_Number(const struct Node * root)
