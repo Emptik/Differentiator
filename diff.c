@@ -665,28 +665,7 @@ int Get_Number(const struct Node * root)
 {
 	assert(root);
 	assert(root->val);
-	int number = 0;
-	int p = 0;
-	int counter = 0;
-	int sign = 0;
-	if(root->val[p] == '-')
-	{
-		sign++;
-		p++;
-	}
-	while('0' <= root->val[p] && root->val[p] <= '9')
-	{
-		number = number * 10 + (root->val[p] -'0');
-		p++;
-		counter++;
-	}
-	p = 0;
-	if(counter == 0) 
-	{
-		assert(0);
-	}
-	if(!sign) return number;
-	else return -number;
+	return atoi(root->val);
 }
 
 struct Node * Take_Number(int number)
