@@ -107,6 +107,8 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			root->left = Optimize_const(root->left, opt_register);\
 			return root;\
 }
+#define _LEFT_CONDITION_ if(root->left->type == NUMBER || root->left->type == MINUS || root->left->type == PLUS || root->left->type == VAR)
+#define _RIGHT_CONDITION_ if(root->right->type == NUMBER || root->right->type == MINUS || root->right->type == PLUS || root->right->type == VAR)
 
 enum Token {
 	NUMBER,
@@ -857,6 +859,7 @@ void Tex(FILE * stream, const struct Node * root, int bull)
 	{
 		fprintf(stream, "\\documentclass[a4, 12pt]{article}\n");
 		fprintf(stream, "\\usepackage{amsmath,amsfonts,amssymb,amsthm,mathtools}\n");
+		fprintf(stream, "\\usepackage[english]{babel}\n");
 		fprintf(stream, "\\begin{document}\nYou wanted the derivative of this expression:\n");
 	}
 	fprintf(stream, "\\[");
@@ -877,7 +880,8 @@ void Tex_make(FILE * stream, const struct Node * root)
 	switch(root->type)
 	{
 		case NUMBER:
-			fprintf(stream, "%s", root->val);
+			if (root->val[0] == '-') fprintf(stream, "(%s)", root->val);
+			else fprintf(stream, "%s", root->val);
 			break;
 		case VAR:
 			fprintf(stream, "%s", root->val);
@@ -898,8 +902,9 @@ void Tex_make(FILE * stream, const struct Node * root)
 			break;
 		case MULT:
 			Tex_make(stream, root->left);
-			fprintf(stream, "\\cdot");
+			fprintf(stream, "\\cdot{");
 			Tex_make(stream, root->right);
+			fprintf(stream, "}");
 			break;
 		case DIVIDE:
 			fprintf(stream, "\\frac{");
@@ -907,6 +912,68 @@ void Tex_make(FILE * stream, const struct Node * root)
 			fprintf(stream, "}{");
 			Tex_make(stream, root->right);
 			fprintf(stream, "}");
+			break;
+		case POW:
+			assert(root->left);
+			assert(root->right);
+			_LEFT_CONDITION_ fprintf(stream, "{");
+			else fprintf(stream, "(");
+			Tex_make(stream, root->left);
+			_LEFT_CONDITION_  fprintf(stream, "}^{");
+			else fprintf(stream, ")^{");
+			Tex_make(stream, root->right);
+			fprintf(stream, "}");
+			break;
+		case LOG:
+			assert(root->left);
+			assert(root->right);
+			fprintf(stream, "\\log_{");
+			Tex_make(stream, root->left);
+			_RIGHT_CONDITION_ fprintf(stream, "}{");
+			else fprintf(stream, "}(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "}");
+			else fprintf(stream, ")");
+			break;
+		case SIN:
+			assert(root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "\\sin{");
+			else fprintf(stream, "\\sin(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_ fprintf(stream, "}");
+			else fprintf(stream, ")");
+			break;
+		case COS:
+			assert(root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "\\cos{");
+			else fprintf(stream, "\\cos(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_ fprintf(stream, "}");
+			else fprintf(stream, ")");
+			break;
+		case SH:
+			assert(root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "\\sinh{");
+			else fprintf(stream, "\\sinh(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_ fprintf(stream, "}");
+			else fprintf(stream, ")");
+			break;
+		case CH:
+			assert(root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "\\cosh{");
+			else fprintf(stream, "\\cosh(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_ fprintf(stream, "}");
+			else fprintf(stream, ")");
+			break;
+		case ATG:
+			assert(root->right);
+			_RIGHT_CONDITION_  fprintf(stream, "\\arctan{");
+			else fprintf(stream, "\\arctan(");
+			Tex_make(stream, root->right);
+			_RIGHT_CONDITION_ fprintf(stream, "}");
+			else fprintf(stream, ")");
 			break;
 	}
 }
