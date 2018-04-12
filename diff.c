@@ -34,7 +34,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			right = Get_Number(root->right);\
 			int sum = left A right;\
 			struct Node * tree = Put_Number(sum);\
-			root = tree_destroy_optimize(root);\
+			root = tree_destroy(root);\
 			(*opt_register)++;\
 			return tree;\
 		}\
@@ -48,7 +48,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			right = Get_Number(root->right);\
 			int sum = left A right;\
 			struct Node * tree = Put_Number(sum);\
-			root = tree_destroy_optimize(root);\
+			root = tree_destroy(root);\
 			(*opt_register)++;\
 			return tree;\
 		}\
@@ -62,7 +62,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			left = Get_Number(root->left);\
 			int sum = left A right;\
 			struct Node * tree = Put_Number(sum);\
-			root = tree_destroy_optimize(root);\
+			root = tree_destroy(root);\
 			(*opt_register)++;\
 			return tree;\
 		}\
@@ -81,7 +81,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			{\
 				struct Node * tree = root->right; \
 				root->right = NULL;\
-				root = tree_destroy_optimize(root);\
+				root = tree_destroy(root);\
 				(*opt_register)++;\
 				return tree;\
 			}\
@@ -96,7 +96,7 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 			if(root->right->val[0] == '0' && (root->right->val[1] == ' ' || root->right->val[1] == '\0'))\
 			{\
 				struct Node * tree = _ONE_;\
-				root = tree_destroy_optimize(root);\
+				root = tree_destroy(root);\
 				(*opt_register)++;\
 				return tree;\
 			}\
@@ -109,6 +109,10 @@ if(root->left) root->left = Optimize_const(root->left, opt_register);\
 }
 #define _LEFT_CONDITION_ if(root->left->type == NUMBER || root->left->type == MINUS || root->left->type == PLUS || root->left->type == VAR)
 #define _RIGHT_CONDITION_ if(root->right->type == NUMBER || root->right->type == MINUS || root->right->type == PLUS || root->right->type == VAR)
+
+char * s;
+int p;
+int check_bracket;
 
 enum Token {
 	NUMBER,
@@ -134,15 +138,20 @@ struct Node
 	struct Node * right;
 };
 
-void arr_fill(char * array, FILE * stream, int * number);													//Функции, которые остались от акинатора и нужны для заполнения исходного дерева.
-void arr_slash(char * array, int * number);																		//Всего их 9 штук.
-struct Node * tree_fill(struct Node * root, char * array, int * number);
-struct Node * tree_add_preparation(struct Node * root, char * array, int * depth);
-void tree_add(struct Node * root, int * depth, int * count, char * array, int * count_2);
-int tab_count(const char * array);
-char * spaces(char * array);
-int point_finder(char * array);
-int type_determinant(char * array);	
+struct Node * G(char * str);
+struct Node * GetE();
+struct Node * GetT();
+struct Node * GetPow();
+struct Node * GetP();
+struct Node * GetSin();
+struct Node * GetCos();
+struct Node * GetSh();
+struct Node * GetCh();
+struct Node * GetLog();
+struct Node * GetAtg();
+struct Node * GetN();
+struct Node * GetVar();
+void user_helper();
 
 struct Node * Diff(const struct Node * root);
 struct Node * CreateNode(int fella, struct Node * lf, struct Node * rg);
@@ -153,64 +162,49 @@ struct Node * Optimize_const(struct Node * root, int * opt_register);
 int Get_Number(const struct Node * root);
 struct Node * Put_Number(int number);
 
-void tree_destroy(struct Node * root);
-void tree_destroy_diff(struct Node * root);
-struct Node * tree_destroy_optimize(struct Node * root);
-
+void Dot_print(struct Node * root, FILE * stream, int lab, int * lab_count);
 void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count);
-void digraph(FILE * stream, int * label);
+void digraph(FILE * stream, int * lab_count);
 void Tex(FILE * stream, const struct Node * root, int bull);
 void Tex_make(FILE * stream, const struct Node * root);
 
+struct Node * tree_destroy(struct Node * root);
+
 int main()
 {
-	FILE * f_in= NULL;
+	FILE * f_in = stdin;
 	FILE * f_out_1 = NULL;
 	FILE * f_out_2 = NULL;
 	FILE * f_out_3 = NULL;
 	FILE * f_out_tex = NULL;
-	char strings[1000] = {0};
-	char * c = calloc(1, sizeof(char));
-	int * n = calloc(1, sizeof(char));
-	int * num = calloc(1, sizeof(int));
+	char string[1000] = {0};
 	struct Node * tree = NULL;
 	struct Node * tree_diff = NULL;
 	int lab = 0;
 	int * lab_count = calloc(1,sizeof(int));
-	f_in = fopen("strings", "r");
 	f_out_1 = fopen("Tree1.dot", "w");
 	f_out_2 = fopen("Tree2.dot", "w");
 	f_out_3 = fopen("Tree3.dot", "w");
 	f_out_tex = fopen("Texmake.tex", "w");
-	assert(f_in);
 	assert(f_out_1);
 	assert(f_out_2);
 	assert(f_out_3);
 	assert(f_out_tex);
-	arr_fill(strings, f_in, num);
-	arr_slash(strings, num);
-	tree = tree_fill(tree, strings, num);
+	fgets(string, 1000, f_in);
+	tree = G(string);
 	assert(tree);
 	tree_diff = Diff(tree);
-	digraph(f_out_1, lab_count);
-	tree_png(tree, f_out_1, lab, lab_count);
-	digraph(f_out_1, lab_count);
-	digraph(f_out_2, lab_count);
-	tree_png(tree_diff, f_out_2, lab, lab_count);
-	digraph(f_out_2, lab_count);
+	assert(tree_diff);
+	Dot_print(tree, f_out_1, lab, lab_count);
+	Dot_print(tree_diff, f_out_2, lab, lab_count);
 	tree_diff = Optimize(tree_diff);
-	digraph(f_out_3, lab_count);
-	tree_png(tree_diff, f_out_3, lab, lab_count);
-	digraph(f_out_3, lab_count);
-	free(c);
-	free(n);
-	free(num);
+	assert(tree_diff);
+	Dot_print(tree_diff, f_out_3, lab, lab_count);
 	Tex(f_out_tex, tree, 1);
 	Tex(f_out_tex, tree_diff, 0);
-	tree_destroy(tree);
-	tree_destroy_diff(tree_diff);
+	tree = tree_destroy(tree);
+	tree_diff = tree_destroy(tree_diff);
 	free(lab_count);
-	fclose(f_in);
 	fclose(f_out_1);
 	fclose(f_out_2);
 	fclose(f_out_3);
@@ -222,191 +216,352 @@ int main()
 	return 0;
 }
 
-int type_determinant(char * array) {
-	int type = 0;
-	if(array[1] == 'x') type = VAR;
-	else if(array[1] == '+') type = PLUS;
-	else if(array[1] == '-') type = MINUS;
-	else if(array[1] == '*') type = MULT;
-	else if(array[1] == '/') type = DIVIDE;
-	else if(array[1] == '^') type = POW;
-	else if(array[1] == 'l') type = LOG;
-	else if(array[1] == 'a') type = ATG;
-	else if (array[1] == 's') {
-		if(array[2] == 'i') type = SIN;
-		else if(array[2] == 'h') type = SH;
-	}
-	else if (array[1] == 'c') {
-		if(array[2] == 'o') type = COS;
-		else if(array[2] == 'h') type = CH;
-	}
-	else type = NUMBER;
-	return type;
-}
-
-void arr_fill(char * array, FILE * stream, int * number)
+struct Node * G(char * str)
 {
-	assert(array);
-	assert(stream);
-	int counter = 0;
-	int c = 0;
-	for(; ; counter++)
-	{
-		c = fgetc(stream);
-		if(c == EOF) break;
-		array[counter] = c;
-	}
-	*number = counter;
-}
-
-void arr_slash(char * array, int * number)
-{
-	assert(array);
-	assert(number);
-	int counter = 0;
-	for(; counter < *number; counter++)
-	{
-		if(array[counter] == '!')
-		{
-			array[counter] = '\0';
-		}
-	}
-	array[counter + 1] = '\0';
-}
-
-struct Node * tree_fill(struct Node * root, char  * array, int * number)
-{
-	int counter = 0;
-	int * depth = calloc(1, sizeof(int));
-	for(; counter < *number; counter++)
-	{
-		if(array[counter] == '\0')
-		{
-			counter++;
-			root = tree_add_preparation(root, array + counter, depth);
-			assert(root);
-		}
-	}
-	free(depth);
+	s = str;
+	p = 0;
+	struct Node * root = NULL;
+	root = GetE();
+	assert(s[p] == '\n');
 	return root;
 }
 
-struct Node * tree_add_preparation(struct Node * root, char * array, int * depth)
+struct Node * GetE()
 {
-	assert(array);
-	if(root == NULL)
+	struct Node * root_left = NULL;
+	 root_left = GetT();
+	 if(!root_left) assert(0);
+	int counter = 0;
+	struct Node * root = NULL;
+	if( s[p] == '+' || s[p] == '-')
 	{
-		root = calloc(1, sizeof(struct Node));
-		root->val = (array + 1);
-		root->type = type_determinant(array);
+		char operator = s[p];
+		p++;
+		struct Node * root_right = GetE();
+		if(!root_right)
+		{
+			printf("I need a subtrahend or a second term\n");
+			abort();
+		}
+		if( operator == '+') 
+		{
+			root = CreateNode(PLUS, root_left, root_right);
+			counter++;
+		}
+		else if( operator == '-')
+		{
+			root = CreateNode(MINUS, root_left, root_right);
+			counter++;
+		}
+		assert(counter);
+	}
+	else
+	{
+		root = root_left;
+	}
+	return root;
+}
+
+struct Node * GetT()
+{
+	struct Node * root_left = NULL;
+	root_left = GetPow();
+	if(!root_left) assert(0);
+	int counter = 0;
+	struct Node * root = NULL;
+	if( s[p] == '*' || s[p] == '/')
+	{
+		char operator = s[p];
+		p++;
+		struct Node * root_right = GetPow();
+		if(!root_right)
+		{
+			printf("I need a divider or a second factor\n");
+			abort();
+		}
+		if( operator == '*') 
+		{
+			if(!check_bracket)
+			{
+				printf("Try to use a such kind of expression: '(EXPRESSION*EXPRESSION)'\n");
+				abort();
+			}
+			root = CreateNode(MULT, root_left, root_right);
+			counter++;
+		}
+		else if( operator == '/')
+		{
+			if(!check_bracket)
+			{
+				printf("Try to use a such kind of expression: '(EXPRESSION/EXPRESSION)'\n");
+				abort();
+			}
+			root = CreateNode(DIVIDE, root_left, root_right);
+			counter++;
+		}
+		assert(counter);
+	}
+	else
+	{
+		root = root_left;
+	}
+	return root;
+}
+
+struct Node * GetPow()
+{
+	struct Node * root_left = NULL;
+	root_left = GetP();
+	if(!root_left) assert(0);
+	int counter = 0;
+	struct Node * root = NULL;
+	if( s[p] == '^')
+	{
+		char operator = s[p];
+		p++;
+		struct Node * root_right = GetP();
+		if(!root_right)
+		{
+			printf("I need a degree\n");
+			abort();
+		}
+		if( operator == '^') 
+		{
+			if(!check_bracket)
+			{
+				printf("Try to use a such kind of expression: '(EXPRESSION^EXPRESSION)'\n");
+				abort();
+			}
+			root = CreateNode(POW, root_left, root_right);
+			counter++;
+		}
+		assert(counter);
+	}
+	else
+	{
+		root = root_left;
+	}
+	return root;
+}
+
+struct Node * GetP()
+{
+	if(s[p] == '(')
+	{
+		p++;
+		check_bracket++;
+		struct Node * root = GetE();
+		if(s[p] != ')')
+		{
+			user_helper();
+			printf("Each opening bracket must have an ending bracket\n");
+			abort();
+		}
+		check_bracket--;
+		p++;
 		return root;
 	}
-	int * count = calloc(1, sizeof(int));
-	int * count_2 = calloc(1, sizeof(int));
-	*depth = tab_count(array);
-	if(*depth) tree_add(root, depth, count, array, count_2);
-	free(count);
-	free(count_2);
+	else if(s[p] == 's' && s[p+1] == 'i' && s[p+2] == 'n')
+		return GetSin();
+	else if(s[p] == 'x' || s[p] == 'X') 
+		return GetVar();
+	else if(s[p] == 'l' && s[p+1] == 'o' && s[p+2] == 'g')
+		return GetLog();
+	else if(s[p] == 'c' && s[p+1] == 'o' && s[p+2] == 's')
+		return GetCos();
+	else if(s[p] == 's' && s[p+1] == 'h')
+		return GetSh();
+	else if(s[p] == 'c' && s[p+1] == 'h')
+		return GetCh();
+	else if(s[p] == 'a' && s[p+1] == 't' && s[p+2] == 'g')
+		return GetAtg();
+	else
+		return GetN();
+	assert(0);
+}
+
+struct Node * GetLog()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(4, sizeof(struct Node));
+	root->type = LOG;
+	root->val[0] = 'l';
+	root->val[1] = 'o';
+	root->val[2] = 'g';
+	root->val[3] = '\0';
+	p += 3;
+	if(s[p] != '[')
+	{
+		printf("Try to use a such kind of expression: 'log[NUMBER,EXPRESSION]'\n");
+		abort();
+	}
+	p++;
+	if(s[p] == 'e')
+	{
+		root->left = calloc(1, sizeof(struct Node));
+		root->left->val = calloc(2, sizeof(struct Node));
+		root->left->type = NUMBER;
+		root->left->val[0] = 'e';
+		root->left->val[1] = '\0';
+		p++;
+	}
+	else root->left = GetN();
+	if(s[p] != ',')
+	{
+		printf("Try to use a such kind of expression: 'log[NUMBER,EXPRESSION]'\n");
+		abort();
+	}
+	p++;
+	root->right = GetE();
+	if(s[p] != ']')
+	{
+		printf("Try to use a such kind of expression: 'log[NUMBER,EXPRESSION]'\n");
+		abort();
+	}
+	p++;
 	return root;
 }
 
-void tree_add(struct Node * root, int * depth, int * count, char * array, int * count_2)
+struct Node * GetSin()
 {
-	assert(depth && count);
-	if(*count < (*depth - 1) && root)
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(4, sizeof(struct Node));
+	root->type = SIN;
+	root->val[0] = 's';
+	root->val[1] = 'i';
+	root->val[2] = 'n';
+	root->val[3] = '\0';
+	p += 3;
+	if(s[p] != '(')
 	{
-		(*count)++;
-		tree_add(root->right, depth, count, array, count_2);
-		tree_add(root->left, depth, count, array, count_2);
-		(*count)--;
-	}	
-	if(root)
+		printf("Try to use a such kind of expression: 'sin(EXPRESSION)'\n");
+		abort();
+	}
+	root->right = GetP();
+	return root;
+}
+
+struct Node * GetCos()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(4, sizeof(struct Node));
+	root->type = COS;
+	root->val[0] = 'c';
+	root->val[1] = 'o';
+	root->val[2] = 's';
+	root->val[3] = '\0';
+	p += 3;
+	if(s[p] != '(')
 	{
-		if((*count == (*depth - 1)) && (!root->right || !root->left) && (root) && !(*count_2))
+		printf("Try to use a such kind of expression: 'cos(EXPRESSION)'\n");
+		abort();
+	}
+	root->right = GetP();
+	return root;
+}
+
+struct Node * GetSh()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(3, sizeof(struct Node));
+	root->type = SH;
+	root->val[0] = 's';
+	root->val[1] = 'h';
+	root->val[2] = '\0';
+	p += 2;
+	if(s[p] != '(')
+	{
+		printf("Try to use a such kind of expression: 'sh(EXPRESSION)'\n");
+		abort();
+	}
+	root->right = GetP();
+	return root;
+}
+
+struct Node * GetCh()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(3, sizeof(struct Node));
+	root->type = CH;
+	root->val[0] = 'c';
+	root->val[1] = 'h';
+	root->val[2] = '\0';
+	p += 2;
+	if(s[p] != '(')
+	{
+		printf("Try to use a such kind of expression: 'ch(EXPRESSION)'\n");
+		abort();
+	}
+	root->right = GetP();
+	return root;
+}
+
+struct Node * GetAtg()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(4, sizeof(struct Node));
+	root->type = ATG;
+	root->val[0] = 'a';
+	root->val[1] = 't';
+	root->val[2] = 'g';
+	root->val[3] = '\0';
+	p += 3;
+	if(s[p] != '(')
+	{
+		printf("Try to use a such kind of expression: 'atg(EXPRESSION)'\n");
+		abort();
+	}
+	root->right = GetP();
+	return root;
+}
+
+struct Node * GetN()
+{
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(10, sizeof(struct Node));
+	root->type = NUMBER;
+	int counter = 0;
+	while('0' <= s[p] && s[p] <= '9')
+	{
+		if(counter == 8)
 		{
-			(*count_2)++;
-			array = spaces(array);
-			assert(array[0] == '(' || array[0] == ')' || array[0] == '\0');
-			if(!point_finder(root->val))
-			{
-				if(array[0] == '(') 
-				{
-					assert(!root->right);
-					root->right = calloc(1, sizeof(struct Node));
-					root->right->val = (array + 1);
-					root->right->type = type_determinant(array);
-				}
-				else if(array[0] == ')')
-				{
-					assert(!root->left);
-					root->left = calloc(1, sizeof(struct Node));
-					root->left->val = (array + 1);
-					root->left->type = type_determinant(array);
-				}
-			}
-			else
-				(*count_2)--;
+			printf("You have too big number in initial function\n");
+			abort();
 		}
+		root->val[counter] = s[p];
+		p++;
+		counter++;
 	}
+	root->val[++counter] = '\0';
+	if(counter == 1) 
+	{
+		user_helper();
+		printf("There is not a number in GetN().\n");
+		abort();
+	}
+	return root;
 }
 
-int tab_count(const char * array)
+struct Node * GetVar()
 {
-	assert(array);
-	int counter = 0;
-	int depth = 0;
-	for(; array[counter] != '\0'; counter++)
-	{
-		if(array[counter] == '\t') 
-		{	
-			depth++;
-		}
-	}
-	return depth;
+	struct Node * root = calloc(1, sizeof(struct Node));
+	root->val = calloc(2, sizeof(struct Node));
+	root->type = VAR;
+	root->val[0] = 'x';
+	root->val[1] = '\0';
+	p++;
+	return root;
 }
 
-char * spaces(char * array)
+void user_helper()
 {
-	assert(array);
-	int counter = 0;
-	int space = 0;
-	for(; array[counter] != '\0'; counter++)
+	int counter = p;
+	while(counter > 0)
 	{
-		if(array[counter] == '\t' || array[counter] == '\n')
-		{
-			space++;
-		}
+		printf(" ");
+		counter--;
 	}
-	return (array + space);
-}
-
-int point_finder(char * array)
-{
-	assert(array);
-	int counter = 0;
-	int i = 0;
-	for(i = 0; array[i] != '\0'; i++)
-	{
-		if(array[i] == ' ') counter++;
-	}
-	return counter;
-}
-
-void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count)
-{
-	assert(stream);
-	if(root) 
-	{
-		fprintf(stream, "n%03d ", lab);
-		fprintf(stream, "[label=\"%s\"] ;\n", root->val);
-		assert(lab < 990 && (*lab_count) < 990);
-		if(root->left) fprintf(stream, "n%03d -> n%03d;\n", lab, (lab + 1));
-		(*lab_count)++;
-		tree_png(root->left, stream, (lab + 1), lab_count);
-		assert(lab < 990 && (*lab_count) < 990);
-		if(root->right) fprintf(stream, "n%03d -> n%03d;\n", lab, (*lab_count));
-		tree_png(root->right, stream, *lab_count, lab_count);
-	}
+	printf("^\n");
 }
 
 struct Node * Diff(const struct Node * root)
@@ -558,7 +713,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 			if(!root->right && !root->left)
 			{
 				assert(root->val);
-				root = tree_destroy_optimize(root);
+				root = tree_destroy(root);
 				struct Node * tree = calloc(1, sizeof(struct Node));
 				tree->val = calloc(2, sizeof(char));
 				tree->val[0] = '0';
@@ -575,14 +730,14 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					struct Node * u = root->right;
 					root->right = NULL;
-					root = tree_destroy_optimize(root);
+					root = tree_destroy(root);
 					(*opt_register)++;
 					return u;
 				}
 				else if (root->right->val[0] == '0')
 				{
 					(*opt_register)++;
-					root->right = tree_destroy_optimize(root->right);
+					root->right = tree_destroy(root->right);
 				}
 				else root->right = Optimize_One_Zero(root->right, opt_register);
 			}
@@ -593,14 +748,14 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					struct Node * u = root->left;
 					root->left = NULL;
-					root = tree_destroy_optimize(root);
+					root = tree_destroy(root);
 					(*opt_register)++;
 					return u;
 				}
 				else if(root->left->val[0] == '0')
 				{
 					(*opt_register)++;
-					root->left = tree_destroy_optimize(root->left);
+					root->left = tree_destroy(root->left);
 				}
 				else root->left = Optimize_One_Zero(root->left, opt_register);
 			}
@@ -617,7 +772,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					struct Node * u = root->right;
 					root->right = NULL;
-					root = tree_destroy_optimize(root);
+					root = tree_destroy(root);
 					(*opt_register)++;
 					return u;
 				}
@@ -627,20 +782,20 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 					if(root->right->val[0] == '0')
 					{
 						(*opt_register)++;
-						root->right = tree_destroy_optimize(root->right);
-						if(root->left) root->left = tree_destroy_optimize(root->left);
+						root->right = tree_destroy(root->right);
+						if(root->left) root->left = tree_destroy(root->left);
 						struct Node * tree = calloc(1, sizeof(struct Node));
 						tree->val = calloc(2, sizeof(char));
 						tree->val[0] = '0';
 						tree->val[1] = '\0';
 						tree->type = NUMBER;
-						root = tree_destroy_optimize(root);
+						root = tree_destroy(root);
 						return tree;
 					}
 					else if(root->right->val[0] == '1' && root->right->val[1] == '\0')
 					{
 						(*opt_register)++;
-						root->right = tree_destroy_optimize(root->right);
+						root->right = tree_destroy(root->right);
 					}
 					else root->right = Optimize_One_Zero(root->right, opt_register);
 				}
@@ -652,7 +807,7 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 				{
 					struct Node * u = root->left;
 					root->left = NULL;
-					root = tree_destroy_optimize(root);
+					root = tree_destroy(root);
 					(*opt_register)++;
 					return u;
 				}
@@ -661,20 +816,20 @@ struct Node * Optimize_One_Zero(struct Node * root, int * opt_register)
 					if(root->left->val[0] == '0')
 					{
 						(*opt_register)++;
-						root->left = tree_destroy_optimize(root->left);
-						if(root->right) root->right = tree_destroy_optimize(root->right);
+						root->left = tree_destroy(root->left);
+						if(root->right) root->right = tree_destroy(root->right);
 						struct Node * tree = calloc(1, sizeof(struct Node));
 						tree->val = calloc(2, sizeof(char));
 						tree->val[0] = '0';
 						tree->val[1] = '\0';
 						tree->type = NUMBER;
-						root = tree_destroy_optimize(root);
+						root = tree_destroy(root);
 						return tree;
 					}
 					else if(root->left->val[0] == '1' && root->left->val[1] == '\0')
 					{
 						(*opt_register)++;
-						root->left = tree_destroy_optimize(root->left);
+						root->left = tree_destroy(root->left);
 					}
 					else
 						root->left = Optimize_One_Zero(root->left, opt_register);
@@ -719,7 +874,7 @@ struct Node * Optimize_const(struct Node * root, int * opt_register)
 					right = Get_Number(root->right);
 					int sum = left * right;
 					struct Node * tree = Put_Number(sum);
-					root = tree_destroy_optimize(root);
+					root = tree_destroy(root);
 					(*opt_register)++;
 					return tree;
 				}
@@ -733,7 +888,7 @@ struct Node * Optimize_const(struct Node * root, int * opt_register)
 					{
 						right = Get_Number(root->right); 
 						struct Node * tree = Put_Number(right);
-						root = tree_destroy_optimize(root);
+						root = tree_destroy(root);
 						(*opt_register)++;
 						return tree;
 					}
@@ -751,7 +906,7 @@ struct Node * Optimize_const(struct Node * root, int * opt_register)
 					{
 						left = Get_Number(root->left); 
 						struct Node * tree = Put_Number(left);
-						root = tree_destroy_optimize(root);
+						root = tree_destroy(root);
 						(*opt_register)++;
 						return tree;
 					}
@@ -840,16 +995,40 @@ struct Node * Copy(const struct Node * root)
 	return NULL;
 }
 
-void digraph(FILE * stream, int * label)
+void Dot_print(struct Node * root, FILE * stream, int lab, int * lab_count)
 {
-	assert(label);
-	if(!(*label)) {
+	digraph(stream, lab_count);
+	tree_png(root, stream, lab, lab_count);
+	digraph(stream, lab_count);
+}
+
+void tree_png(struct Node * root, FILE * stream, int lab, int * lab_count)
+{
+	assert(stream);
+	if(root) 
+	{
+		fprintf(stream, "n%03d ", lab);
+		fprintf(stream, "[label=\"%s\"] ;\n", root->val);
+		assert(lab < 990 && (*lab_count) < 990);
+		if(root->left) fprintf(stream, "n%03d -> n%03d;\n", lab, (lab + 1));
+		(*lab_count)++;
+		tree_png(root->left, stream, (lab + 1), lab_count);
+		assert(lab < 990 && (*lab_count) < 990);
+		if(root->right) fprintf(stream, "n%03d -> n%03d;\n", lab, (*lab_count));
+		tree_png(root->right, stream, *lab_count, lab_count);
+	}
+}
+
+void digraph(FILE * stream, int * lab_count)
+{
+	assert(lab_count);
+	if(!(*lab_count)) {
 		fprintf(stream, "digraph G{\n");
 		fprintf(stream, "node [style=filled, color=azure3];\n");
 	}
 	else {
 		fprintf(stream,"}\n");
-		(*label) = 0;
+		(*lab_count) = 0;
 	}
 }
 
@@ -978,35 +1157,20 @@ void Tex_make(FILE * stream, const struct Node * root)
 	}
 }
 
-void tree_destroy(struct Node * root)
+struct Node * tree_destroy(struct Node * root)
 {
 	if(root)
-    {
+	{
 		tree_destroy(root->left);
 		tree_destroy(root->right);
-		free(root);
-    }
-}
-
-void tree_destroy_diff(struct Node * root)
-{
-	if(root)
-	{
-		tree_destroy_diff(root->left);
-		tree_destroy_diff(root->right);
-		free(root->val);
-		free(root);
-	}
-}
-
-struct Node * tree_destroy_optimize(struct Node * root)
-{
-	if(root)
-	{
-		tree_destroy_diff(root->left);
-		tree_destroy_diff(root->right);
 		if(root->val) free(root->val);
+		else
+		{
+			printf("There is a tree without tree->val\n");
+			abort();
+		}
 		free(root);
 	}
 	return NULL;
 }
+
