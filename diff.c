@@ -237,7 +237,6 @@ struct Node * GetE()
 	{
 		char operator = s[p];
 		p++;
-		assert(0);
 		struct Node * root_right = GetE();
 		if(!root_right)
 		{
